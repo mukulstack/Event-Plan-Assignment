@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Event Planner - Login/Signup</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <h1>Login</h1>
+  <form id="loginForm">
+    <input type="email" id="loginEmail" placeholder="Email" required />
+    <input type="password" id="loginPassword" placeholder="Password" required />
+    <button type="submit">Login</button>
+  </form>
+
+  <h1>Signup</h1>
+  <form id="signupForm">
+    <input type="text" id="signupName" placeholder="Name" required />
+    <input type="email" id="signupEmail" placeholder="Email" required />
+    <input type="password" id="signupPassword" placeholder="Password" required />
+    <select id="signupRole">
+      <option value="User">User</option>
+      <option value="Admin">Admin</option>
+    </select>
+    <button type="submit">Signup</button>
+  </form>
+
+  <script>
+    const API = "http://localhost:5001/api";
+
+    // Login
+    document.getElementById("loginForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const res = await fetch(`${API}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: document.getElementById("loginEmail").value,
+          password: document.getElementById("loginPassword").value
+        })
+      });
+      const data = await res.json();
+      if(res.ok){
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("role", data.role || data.user?.role);
+        localStorage.setItem("userId", data._id || data.user?.id);
+        if(localStorage.getItem("role") === "Admin") window.location = "admin.html";
+        else window.location = "events.html";
+      } else alert(data.message);
+    });
+
+    // Signup
+    document.getElementById("signupForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const res = await fetch(`${API}/auth/signup`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: document.getElementById("signupName").value,
+          email: document.getElementById("signupEmail").value,
+          password: document.getElementById("signupPassword").value,
+          role: document.getElementById("signupRole").value
+        })
+      });
+      const data = await res.json();
+      if(res.ok){
+        alert("Signup successful! Please login.");
+      } else alert(data.message);
+    });
+  </script>
+</body>
+</html>

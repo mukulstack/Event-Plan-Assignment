@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Events</title>
+</head>
+<body>
+  <h1>All Events</h1>
+  <div id="events"></div>
+
+  <script>
+    const token = localStorage.getItem("token");
+    const userId = localStorage.getItem("userId");
+
+    if (!token) {
+      alert("Please log in first!");
+      window.location.href = "index.html";
+    }
+
+    async function fetchEvents() {
+      // get all events
+      const res = await fetch("http://localhost:5001/api/events/", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      
+      // const events = await res.json();
+      const data = await res.json();
+      console.log("Events API response:", data);
+      const events = Array.isArray(data) ? data : data.events || data.data || [];
+      // get user RSVPs
+      const rsvpRes = await fetch(`http://localhost:5001/api/rsvp/user/${userId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const rsvps = await rsvpRes.json();
+
+      // make a map for quick lookup: {eventId: status}
+      const rsvpMap = {};
+      rsvps.forEach(r => {
+        if (r.event && r.event._id) {   // check event is not null
+          rsvpMap[r.event._id] = r.status;
+        }
+      });
+
+      // render
+      const container = document.getElementById("events");
+      container.innerHTML = "";
+
+      events.forEach(event => {
+        const userStatus = rsvpMap[event._id] || "Not Responded";
+        const eventDiv = document.createElement("div");
+        eventDiv.innerHTML = `
+          <h3>${event.title}</h3>
+          <p>${event.description}</p>
+          <p>Date: ${new Date(event.date).toLocaleDateString()}</p>
+          <p>Time: ${event.time}</p>
+          <p>Location: ${event.location}</p>
+          <p>Your Status: ${userStatus}</p>
+
+          <button onclick="submitRsvp('${event._id}', 'Going')">Going</button>
+          <button onclick="submitRsvp('${event._id}', 'Maybe')">Maybe</button>
+          <button onclick="submitRsvp('${event._id}', 'Decline')">Decline</button>
+        `;
+        container.appendChild(eventDiv);
+      });
+    }
+
+    async function submitRsvp(eventId, status) {
+      const res = await fetch("http://localhost:5001/api/rsvp", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ eventId, status }),
+      });
+
+      const data = await res.json();
+      alert(data.message || "RSVP submitted");
+
+      // reload events so status updates instantly
+      fetchEvents();
+    }
+
+    fetchEvents();
+  </script>
+</body>
+</html>

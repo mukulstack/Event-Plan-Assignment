@@ -1,6 +1,6 @@
 const express = require("express");
 const { protect } = require("../middleware/authMiddleware.js");
-const { createOrUpdateRSVP, getRSVPsByEvent, getUserRSVPs } = ("../controllers/rsvpController.js");
+const { createOrUpdateRSVP, getRSVPsByEvent, getUserRSVPs } = require("../controllers/rsvpController.js");
 
 const router = express.Router();
 
